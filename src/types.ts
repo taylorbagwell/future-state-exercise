@@ -3,7 +3,7 @@ export interface Brewery {
   country: string;
   id: string;
   name: string;
-  phone: string;
+  phone: string | null;
   state: string;
   website_url: string | null;
 }

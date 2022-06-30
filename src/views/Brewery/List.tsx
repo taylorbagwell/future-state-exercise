@@ -9,27 +9,35 @@ import update from 'immutability-helper';
 
 import { Brewery } from '../../types';
 import Button from '../../components/Button';
+import Loader from '../../components/Loader';
+
+type SortOption = 'asc' | 'desc';
 
 export default function BreweryList() {
   const [breweries, setBreweries] = useState<Brewery[]>([]);
   const [hasNextPage, setHasNextPage] = useState(true);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [showLoader, setShowLoader] = useState(true);
+  const [sortOption, setSortOption] = useState<SortOption>('asc');
 
   const init = useRef(false);
   const prevPage = useRef(1);
+  const prevSortOption = useRef<SortOption>('asc');
 
   const fetchBreweries = useCallback(() => {
-    let uri = `https://api.openbrewerydb.org/breweries?per_page=10&page=${page}`;
+    setShowLoader(true);
+
+    let uri = `https://api.openbrewerydb.org/breweries?per_page=10&page=${page}&sort=name:${sortOption}`;
 
     if (search.trim().length > 0) {
-      uri = `https://api.openbrewerydb.org/breweries/search?query=${encodeURIComponent(search.trim())}&per_page=10&page=${page}`;
+      uri = `https://api.openbrewerydb.org/breweries/search?query=${encodeURIComponent(search.trim())}&per_page=10&page=${page}&sort=name:${sortOption}`;
     }
 
     fetch(uri)
       .then((res) => res.json())
       .then((res) => {
-        console.log('callback', res);
+        setShowLoader(false);
 
         if (res instanceof Array) {
           setBreweries((s) => update(s, {
@@ -40,23 +48,32 @@ export default function BreweryList() {
         setHasNextPage(res.length === 10);
       })
       .catch((err) => {
+        setShowLoader(false);
+
         if (err instanceof Error) {
           alert(err.message);
         }
       });
-  }, [page, search]);
+  }, [page, search, sortOption]);
 
   useEffect(() => {
+    // Fetch breweries on first page load
     if (init.current === false) {
       init.current = true;
 
       fetchBreweries();
+    // Fetch breweries if page state changes
     } else if (prevPage.current !== page) {
       prevPage.current = page;
 
       fetchBreweries();
+    // Fetch breweries if sort state changes
+    } else if (prevSortOption.current !== sortOption) {
+      prevSortOption.current = sortOption;
+
+      fetchBreweries();
     }
-  }, [fetchBreweries, page]);
+  }, [fetchBreweries, page, sortOption]);
 
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -66,14 +83,19 @@ export default function BreweryList() {
 
   function onReset() {
     setSearch('');
-    setBreweries((s) => update(s, { $set: [] }));
+
+    if (page > 1) {
+      setPage(1);
+    }
+
+    fetchBreweries();
   }
 
   return (
     <main className="font-sans max-w-2xl mx-auto mt-16 p-8 rounded-md shadow-md w-full">
       <h1 className="text-4xl mb-8">Brewery Catalog</h1>
       <form className="mb-8" onSubmit={onSubmit}>
-        <div className="flex gap-2">
+        <div className="flex gap-2 mb-4">
           <input
             className="border-2 border-gray-300 px-3 py-2 rounded-md text-black w-full"
             name="search"
@@ -92,6 +114,20 @@ export default function BreweryList() {
             type="reset"
             onClick={() => onReset()}
           />
+        </div>
+        <div>
+          <div>
+            <label className="block mb-1" htmlFor="sort-option">Sort Name By</label>
+            <select
+              className="border-2 border-gray-300 px-3 py-2 rounded-md"
+              id="sort-option"
+              value={sortOption}
+              onChange={(event) => setSortOption(event.currentTarget.value as SortOption)}
+            >
+              <option value="asc">Ascending</option>
+              <option value="desc">Descending</option>
+            </select>
+          </div>
         </div>
       </form>
       {breweries.length === 0 ? (
@@ -147,6 +183,8 @@ export default function BreweryList() {
           </div>
         </>
       )}
+
+      {showLoader && <Loader />}
     </main>
   );
 }

@@ -65,7 +65,18 @@ export default function BreweryDetail() {
             </tr>
             <tr>
               <td className="font-bold p-2">Phone Number</td>
-              <td className="p-2">{details.phone}</td>
+              <td className="p-2">
+                {details.phone ? (
+                  <a
+                    className="text-blue-500 transition-opacity hover:opacity-70"
+                    href={`tel:${details.phone}`}
+                  >
+                    {details.phone}
+                  </a>
+                ) : (
+                  <>No phone number found.</>
+                )}
+              </td>
             </tr>
             <tr>
               <td className="font-bold p-2">Website</td>
