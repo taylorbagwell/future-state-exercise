@@ -1,14 +1,14 @@
-import './App.css';
 import {
   BrowserRouter as Router,
+  Navigate,
   Routes,
   Route,
-  Navigate,
 } from 'react-router-dom';
+
 import BreweryList from './views/Brewery/List';
 import BreweryDetail from './views/Brewery/Detail';
 
-function App() {
+export default function App() {
   return (
     <Router>
       <Routes>
@@ -19,5 +19,3 @@ function App() {
     </Router>
   );
 }
-
-export default App;
